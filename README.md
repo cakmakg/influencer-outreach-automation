@@ -83,7 +83,7 @@ docker run -it --rm \
 1. n8n öffnen: `http://localhost:5678`
 2. Neues Workflow erstellen
 3. Oben rechts auf `...` klicken → `Import from File`
-4. `workflows/influencer-automation.json` hochladen
+4. `influencer-automation.json` hochladen
 
 ### Schritt 3 — Credentials einrichten
 
