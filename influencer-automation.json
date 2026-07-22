@@ -1,0 +1,786 @@
+{
+  "name": "Influencer Outreach Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -1040,
+        -240
+      ],
+      "id": "e26851b9-6bd0-4426-a0c8-ed82b8ba9b20",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "YourBrand_Influencer_NEU",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1027775220,
+          "mode": "list",
+          "cachedResultName": "Influencer_Datenbank",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit#gid=1027775220"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -832,
+        -240
+      ],
+      "id": "8cbef018-a5a7-4dc4-bf86-490e6586d57f",
+      "name": "Get row(s) in sheet",
+      "alwaysOutputData": false,
+      "executeOnce": false,
+      "retryOnFail": false,
+      "notesInFlow": false,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "58cd74d4-8323-44b0-a53e-69dab3f061ac",
+              "leftValue": "={{ $json.Anschreiben_Status }}",
+              "rightValue": "Ausstehend",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        -624,
+        -240
+      ],
+      "id": "50ac1a31-d567-4c55-950e-9cf537e91b53",
+      "name": "Filter"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "300b7717-3dfe-4b29-a286-cec3eeb6c9bd",
+              "name": "handle",
+              "value": "={{ $json.Instagram_Handle }}",
+              "type": "string"
+            },
+            {
+              "id": "f730d902-898b-4764-a106-d8f73a558a84",
+              "name": "stadt",
+              "value": "={{ $json.Stadt_Bundesland }}",
+              "type": "string"
+            },
+            {
+              "id": "e7d425d2-59e4-4238-b62b-422687d5c0ec",
+              "name": "kategorie",
+              "value": "={{ $json.Kategorie }}",
+              "type": "string"
+            },
+            {
+              "id": "3aac49e9-d648-435f-8cb8-b1acc0ff7e93",
+              "name": "follower",
+              "value": "={{ $json.Follower_Anzahl }}",
+              "type": "string"
+            },
+            {
+              "id": "54a22437-6dfe-42f9-adad-e98d6d27096a",
+              "name": "inhalte",
+              "value": "={{ $json.Top_Inhalte }}",
+              "type": "string"
+            },
+            {
+              "id": "6b1fd63e-b9ae-4d79-9f04-8228e9eed30b",
+              "name": "engagement",
+              "value": "={{ $json.Engagement_Rate }}",
+              "type": "string"
+            },
+            {
+              "id": "9e0db20c-34aa-4494-9714-72835f1762f3",
+              "name": "row_number",
+              "value": "={{ $json.row_number }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -416,
+        -240
+      ],
+      "id": "0af57988-70e1-490b-93e2-fe2d30d3762a",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_GROQ_API_KEY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"llama-3.1-8b-instant\",\n  \"max_tokens\": 512,\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"Du bist ein professioneller Social-Media-Manager für YourBrand. YourBrand ist eine [kurze Markenbeschreibung einfügen]. Schreibe personalisierte Instagram-DM-Anschreiben für potenzielle Ambassadoren. Der Ton ist freundlich, authentisch, nicht generisch. Maximal 300 Zeichen. Nutze 1-2 passende Emojis. Erwähne immer den Vergütungs-Anreiz (z. B. Betrag pro Video).\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Schreibe ein Instagram-DM-Anschreiben für diesen Influencer:\\n\\nAccount: {{ $json.handle }}\\nStadt: {{ $json.stadt }}\\nKategorie: {{ $json.kategorie }}\\nFollower: {{ $json.follower }}\\nTop-Inhalte: {{ $json.inhalte }}\\nEngagement-Rate: {{ $json.engagement }}\\n\\nNur die Nachricht zurückgeben, keine Erklärung.\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -208,
+        -240
+      ],
+      "id": "601ea84c-4032-4876-90f9-74d61fa5d11b",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $input.first().json;\nconst anschreiben = response.choices[0].message.content.replace(/\"/g, '');\n\nreturn [{ json: {\n  handle: $('Edit Fields').item.json.handle,\n  anschreiben: anschreiben,\n  row_number: $('Edit Fields').item.json.row_number\n}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -32,
+        -240
+      ],
+      "id": "20cb64d5-7a6e-41db-899a-019c1b2ffd17",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "YourBrand_Influencer_Datenbank",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1241803355,
+          "mode": "list",
+          "cachedResultName": "Generierte Anschreiben",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit#gid=1241803355"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Instagram Handle": "={{ $json.handle }}",
+            "Anschreiben": "={{ $json.anschreiben }}",
+            "Datum": "={{ $now.toFormat('dd.MM.yyyy') }}"
+          },
+          "matchingColumns": [
+            "Claude AI — Generierte Anschreiben"
+          ],
+          "schema": [
+            {
+              "id": "Instagram Handle",
+              "displayName": "Instagram Handle",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Anschreiben",
+              "displayName": "Anschreiben",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Datum",
+              "displayName": "Datum",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        160,
+        -240
+      ],
+      "id": "81a2954c-ebea-4c34-9cbc-e83f89bdc3dd",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "YOUR_TELEGRAM_CHAT_ID",
+        "text": "=🎯 Neues Anschreiben zur Genehmigung!\n\n👤 {{ $('Code in JavaScript').item.json.handle }}\n✉️ {{ $('Code in JavaScript').item.json.anschreiben }}\n\nBitte genehmigen oder ablehnen:",
+        "replyMarkup": "inlineKeyboard",
+        "inlineKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "Genehmigen",
+                    "additionalFields": {
+                      "callback_data": "approve"
+                    }
+                  },
+                  {
+                    "text": "Ablehnen",
+                    "additionalFields": {
+                      "callback_data": "reject"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        336,
+        -240
+      ],
+      "id": "e7ce1e3c-4704-430c-9d18-41e14d9c578f",
+      "name": "Send a text message",
+      "webhookId": "f499b66e-4758-4d73-a6ca-d5b16e82b932",
+      "credentials": {
+        "telegramApi": {
+          "id": "",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "modash-influencer",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -768,
+        -48
+      ],
+      "id": "cabdb1ad-5fdd-4636-b0d0-f97628cfd77a",
+      "name": "Webhook",
+      "webhookId": "145b2237-8874-4251-bbee-bd8827048b25"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "YourBrand_Influencer_NEU",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1027775220,
+          "mode": "list",
+          "cachedResultName": "Influencer_Datenbank",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit#gid=1027775220"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Instagram_Handle": "={{ $json.body.handle }}",
+            "Stadt_Bundesland": "={{ $json.body.city }}, {{ $json.body.bundesland }}",
+            "Kategorie": "={{ $json.body.categories.join(', ') }}",
+            "Follower_Anzahl": "={{ $json.body.followers }}",
+            "Top_Inhalte": "={{ $json.body.bio }}",
+            "Engagement_Rate": "={{ $json.body.engagement_rate }}%",
+            "Website": "={{ $json.body.website }}",
+            "Anschreiben_Status": "Ausstehend"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Instagram_Handle",
+              "displayName": "Instagram_Handle",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Stadt_Bundesland",
+              "displayName": "Stadt_Bundesland",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Kategorie",
+              "displayName": "Kategorie",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Follower_Anzahl",
+              "displayName": "Follower_Anzahl",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Top_Inhalte",
+              "displayName": "Top_Inhalte",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Engagement_Rate",
+              "displayName": "Engagement_Rate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Kontakt_Email",
+              "displayName": "Kontakt_Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Website",
+              "displayName": "Website",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Anschreiben_Status",
+              "displayName": "Anschreiben_Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Notizen",
+              "displayName": "Notizen",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Erfassung_Datum",
+              "displayName": "Erfassung_Datum",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -560,
+        -48
+      ],
+      "id": "4974d190-da7e-45e7-91c5-65b33140cccf",
+      "name": "Append row in sheet1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "updates": [
+          "callback_query"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -848,
+        304
+      ],
+      "id": "dd4438d1-e100-411d-8f4c-599d6af78629",
+      "name": "Telegram Trigger",
+      "webhookId": "e01e8860-e15c-4688-bf3d-1f2c4195e4dc",
+      "credentials": {
+        "telegramApi": {
+          "id": "",
+          "name": "Telegram account 2"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.first().json;\nconst callbackData = data.callback_query.data;\nconst chatId = data.callback_query.message.chat.id;\n\nreturn [{ json: {\n  action: callbackData,\n  chatId: chatId,\n  approved: callbackData === 'approve'\n}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -640,
+        304
+      ],
+      "id": "5cf68327-5271-495f-b77b-26ffebb8f09b",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "15033da0-63c4-423a-9170-04ed23c55455",
+              "leftValue": "={{ $json.approved }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -432,
+        304
+      ],
+      "id": "7e52c398-36fd-4b5e-8823-c81a0454a1fe",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "chatId": "YOUR_TELEGRAM_CHAT_ID",
+        "text": "✅ Anschreiben genehmigt!  Bitte manuell über @your_brand_handle senden.",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -96,
+        192
+      ],
+      "id": "0f5e497e-2112-45f2-b948-d8d1deb6e86b",
+      "name": "Send a text message1",
+      "webhookId": "ab0da7d1-17dd-48b2-b878-7b78621e1409",
+      "credentials": {
+        "telegramApi": {
+          "id": "",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "YOUR_TELEGRAM_CHAT_ID",
+        "text": "❌ Anschreiben abgelehnt.  Wird nicht gesendet.",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -80,
+        432
+      ],
+      "id": "0be54d4a-f124-4bf7-9b0c-b82ddf937610",
+      "name": "Send a text message2",
+      "webhookId": "471dd325-f76c-4549-94ab-60b01a152c50",
+      "credentials": {
+        "telegramApi": {
+          "id": "",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.manychat.com/fb/sending/sendContent",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer MANYCHAT_API_KEY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"subscriber_id\": \"INSTAGRAM_USER_ID\",\n  \"data\": {\n    \"version\": \"v2\",\n    \"content\": {\n      \"messages\": [\n        {\n          \"type\": \"text\",\n          \"text\": \"{{ $('Code in JavaScript').item.json.anschreiben }}\"\n        }\n      ]\n    }\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        560,
+        -240
+      ],
+      "id": "b1d0ee64-94f1-40df-b243-403516f63917",
+      "name": "HTTP Request1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a text message": {
+      "main": [
+        []
+      ]
+    },
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Send a text message1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a text message2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet1": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "ccd8af64-ac41-49dc-9875-f5a9a938bb3a",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "id": "rhS6NAoyX1t017c6",
+  "tags": []
+}
